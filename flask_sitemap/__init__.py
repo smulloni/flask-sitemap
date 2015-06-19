@@ -205,7 +205,7 @@ class Sitemap(object):
             _scheme=self.app.config.get('SITEMAP_URL_SCHEME')
         )
         # A request context is required to use url_for
-        with self.app.test_request_context():
+        with self.app.test_request_context(base_url='http://%s' % self.app.config.get('SITEMAP_SERVER_NAME')):
             for generator in self.url_generators:
                 for generated in generator():
                     result = {}
