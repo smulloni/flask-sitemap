@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Flask-Sitemap
-# Copyright (C) 2014, 2015 CERN.
+# Copyright (C) 2014, 2015, 2016 CERN.
 #
 # Flask-Sitemap is free software; you can redistribute it and/or modify
 # it under the terms of the Revised BSD License; see LICENSE file for
@@ -68,7 +68,6 @@ sitemap_page_needed = _signals.signal('sitemap-page-needed')
 
 
 class Sitemap(object):
-
     """Flask extension implementation."""
 
     def __init__(self, app=None):
@@ -193,8 +192,10 @@ class Sitemap(object):
 
     def _routes_without_params(self):
         if self.app.config['SITEMAP_INCLUDE_RULES_WITHOUT_PARAMS']:
+            ignore = set(self.app.config['SITEMAP_IGNORE_ENDPOINTS'] or [])
             for rule in self.app.url_map.iter_rules():
-                if 'GET' in rule.methods and len(rule.arguments) == 0:
+                if rule.endpoint not in ignore and 'GET' in rule.methods and \
+                        len(rule.arguments) == 0:
                     yield rule.endpoint, {}
 
     def _generate_all_urls(self):
@@ -237,7 +238,7 @@ class Sitemap(object):
                     yield result
 
     def gzip_response(self, data):
-        """GZip response data and create new Response instance."""
+        """Gzip response data and create new Response instance."""
         gzip_buffer = BytesIO()
         gzip_file = gzip.GzipFile(mode='wb', compresslevel=6,
                                   fileobj=gzip_buffer)
@@ -245,6 +246,7 @@ class Sitemap(object):
         gzip_file.close()
         response = Response()
         response.data = gzip_buffer.getvalue()
+        response.headers['Content-Type'] = 'application/octet-stream'
         response.headers['Content-Encoding'] = 'gzip'
         response.headers['Content-Length'] = len(response.data)
 
